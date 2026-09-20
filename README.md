@@ -114,6 +114,16 @@ python app.py
 
 Then open `http://127.0.0.1:5000`.
 
+### Application Screenshots
+
+#### Home Page
+
+![DiaPredict home page](home-page.png)
+
+#### Screening Result
+
+![DiaPredict screening result](screening-result.png)
+
 ### Python Usage
 
 ```python
