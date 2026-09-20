@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>DiaPredict | Assessment Result</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+
+        .result-section {
+            padding: 55px 0 70px;
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .result-header h1 {
+            font-family: "Manrope", sans-serif;
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+
+        .result-header p {
+            color: var(--muted);
+            max-width: 650px;
+            margin: auto;
+        }
+
+        .result-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .result-main {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .risk-circle {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            margin: auto;
+            display: grid;
+            place-items: center;
+            background: conic-gradient(
+                var(--primary) {{ result.probability }}%,
+                #e8eef7 {{ result.probability }}% 100%
+            );
+            position: relative;
+        }
+
+        .risk-circle::before {
+            content: "";
+            position: absolute;
+            width: 205px;
+            height: 205px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .risk-content {
+            position: relative;
+            text-align: center;
+        }
+
+        .risk-content strong {
+            display: block;
+            font-family: "Manrope", sans-serif;
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .risk-content span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .risk-label {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            {% if result.is_high_risk %}
+            background: #fef2f2;
+            color: #dc2626;
+            {% else %}
+            background: #ecfdf5;
+            color: #059669;
+            {% endif %}
+        }
+
+        .result-copy h2 {
+            font-family: "Manrope", sans-serif;
+            font-size: 30px;
+            margin-bottom: 12px;
+        }
+
+        .result-copy p {
+            color: var(--muted);
+            margin-bottom: 22px;
+        }
+
+        .threshold-info {
+            padding: 15px 17px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 25px;
+        }
+
+        .metric-box {
+            padding: 20px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+        }
+
+        .metric-box span {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+
+        .metric-box strong {
+            font-family: "Manrope", sans-serif;
+            font-size: 22px;
+        }
+
+        .metric-box small {
+            display: block;
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .result-two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .detail-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 28px;
+        }
+
+        .detail-card h3 {
+            font-family: "Manrope", sans-serif;
+            margin-bottom: 20px;
+        }
+
+        .factor {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 0;
+            border-bottom: 1px solid #eef2f7;
+            font-size: 14px;
+        }
+
+        .factor:last-child {
+            border-bottom: 0;
+        }
+
+        .factor-name {
+            font-weight: 600;
+        }
+
+        .factor-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #eff6ff;
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .warning-box {
+            display: flex;
+            gap: 13px;
+            margin-bottom: 20px;
+            padding: 18px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 13px;
+            color: #9a3412;
+        }
+
+        .warning-box strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .warning-box p {
+            font-size: 13px;
+        }
+
+        .clinical-box {
+            display: flex;
+            gap: 13px;
+            margin-bottom: 20px;
+            padding: 18px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 13px;
+            color: #991b1b;
+        }
+
+        .clinical-box p {
+            font-size: 13px;
+        }
+
+        .glucose-status {
+            padding: 18px;
+            border-radius: 13px;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+        }
+
+        .glucose-status strong {
+            display: block;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .glucose-status p {
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .result-actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .new-assessment {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 50px;
+            padding: 0 25px;
+            border-radius: 10px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .result-disclaimer {
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+            max-width: 700px;
+            margin: 25px auto 0;
+        }
+
+        @media (max-width: 850px) {
+
+            .result-main {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .result-two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 520px) {
+
+            .result-card {
+                padding: 25px;
+            }
+
+            .risk-circle {
+                width: 220px;
+                height: 220px;
+            }
+
+            .risk-circle::before {
+                width: 175px;
+                height: 175px;
+            }
+
+            .result-header h1 {
+                font-size: 32px;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+<header class="navbar">
+
+    <div class="container nav-inner">
+
+        <a href="/" class="logo">
+            <span class="logo-icon">+</span>
+            <span>Dia<span>Predict</span></span>
+        </a>
+
+        <a href="/" class="new-assessment">
+            New assessment →
+        </a>
+
+    </div>
+
+</header>
+
+
+<main>
+
+<section class="result-section">
+
+<div class="container">
+
+
+<div class="result-header">
+
+    <div class="eyebrow">
+        ASSESSMENT COMPLETE
+    </div>
+
+    <h1>Your screening result</h1>
+
+    <p>
+        The following result is generated from the health measurements
+        provided to the machine-learning model.
+    </p>
+
+</div>
+
+
+{% if result.out_of_range %}
+
+<div class="warning-box">
+
+    <div>⚠</div>
+
+    <div>
+
+        <strong>Input outside training range</strong>
+
+        <p>
+            {{ result.out_of_range|join(', ') }}
+            is outside the range observed during model training.
+            The prediction may therefore be less reliable.
+        </p>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+{% if result.clinical_override %}
+
+<div class="clinical-box">
+
+    <div>⚠</div>
+
+    <div>
+
+        <strong>Glucose threshold flag</strong>
+
+        <p>
+            The entered 2-hour glucose value is at or above
+            200 mg/dL. This is a clinically significant glucose
+            threshold and should be evaluated by a healthcare
+            professional.
+        </p>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+<div class="result-card">
+
+<div class="result-main">
+
+
+<div>
+
+    <div class="risk-circle">
+
+        <div class="risk-content">
+
+            <strong>{{ result.probability }}%</strong>
+
+            <span>estimated risk</span>
+
+            <div class="risk-label">
+                {{ result.prediction }}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="result-copy">
+
+    <div class="eyebrow">
+        MODEL ASSESSMENT
+    </div>
+
+    <h2>
+        {{ result.prediction }}
+    </h2>
+
+    <p>
+        The model estimated a {{ result.probability }}%
+        probability based on the measurements entered.
+    </p>
+
+    <div class="threshold-info">
+
+        <strong>Model decision threshold:</strong>
+        {{ result.threshold }}%
+
+    </div>
+
+</div>
+
+</div>
+
+
+<div class="metrics-grid">
+
+    <div class="metric-box">
+        <span>AGE</span>
+        <strong>{{ patient["Age"]|int }}</strong>
+        <small>years</small>
+    </div>
+
+    <div class="metric-box">
+        <span>BMI</span>
+        <strong>{{ bmi }}</strong>
+        <small>calculated</small>
+    </div>
+
+    <div class="metric-box">
+        <span>GLUCOSE</span>
+        <strong>{{ patient["Glucose"]|int }}</strong>
+        <small>mg/dL</small>
+    </div>
+
+    <div class="metric-box">
+        <span>BLOOD PRESSURE</span>
+        <strong>{{ patient["BloodPressure"]|int }}</strong>
+        <small>diastolic mmHg</small>
+    </div>
+
+</div>
+
+</div>
+
+
+
+<div class="result-two-column">
+
+
+<div class="detail-card">
+
+    <h3>Key factors considered</h3>
+
+    {% for factor in result.top_factors %}
+
+    <div class="factor">
+
+        <span class="factor-name">
+            {{ factor }}
+        </span>
+
+        <span class="factor-badge">
+            Model factor
+        </span>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+
+<div class="detail-card">
+
+    <h3>Glucose screening</h3>
+
+    <div class="glucose-status">
+
+        <strong>
+            {{ result.glucose_category }}
+        </strong>
+
+        <p>
+            {{ result.glucose_category_detail }}
+        </p>
+
+    </div>
+
+
+    <br>
+
+
+    <h3>Additional information</h3>
+
+    <div class="factor">
+
+        <span>Pregnancies</span>
+
+        <strong>
+            {{ patient["Pregnancies"]|int }}
+        </strong>
+
+    </div>
+
+    <div class="factor">
+
+        <span>Family history score</span>
+
+        <strong>
+            {{ patient["DiabetesPedigreeFunction"] }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+</div>
+
+
+{% if used_default_insulin or used_default_skin %}
+
+<div class="info-box" style="margin-top:20px;">
+
+    <div class="info-icon">i</div>
+
+    <div>
+
+        <strong>Typical values used</strong>
+
+        <p>
+            {% if used_default_insulin %}
+            A typical population value was used for insulin.
+            {% endif %}
+
+            {% if used_default_skin %}
+            A typical population value was used for skin thickness.
+            {% endif %}
+        </p>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+<div class="result-actions">
+
+    <a href="/" class="new-assessment">
+        ← Start new assessment
+    </a>
+
+</div>
+
+
+<p class="result-disclaimer">
+    This result is an AI/ML screening estimate and is not a medical
+    diagnosis. It should not be used as a substitute for professional
+    medical advice, diagnosis, or treatment.
+</p>
+
+
+</div>
+
+</section>
+
+</main>
+
+
+<footer>
+
+    <div class="container footer-inner">
+
+        <span>DiaPredict · AI/ML Capstone Project</span>
+
+        <span>Diabetes Risk Screening</span>
+
+    </div>
+
+</footer>
+
+</body>
+</html>

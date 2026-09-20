@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>DiaPredict | Diabetes Risk Assessment</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="container nav-inner">
+        <a href="/" class="logo">
+            <span class="logo-icon">+</span>
+            <span>Dia<span>Predict</span></span>
+        </a>
+
+        <div class="nav-status">
+            <span class="online-dot"></span>
+            AI-powered screening
+        </div>
+    </div>
+</header>
+
+
+<main>
+
+<section class="hero">
+    <div class="container hero-inner">
+
+        <div class="hero-content">
+            <div class="eyebrow">
+                AI HEALTH ASSESSMENT
+            </div>
+
+            <h1>
+                Diabetes risk
+                <span>assessment.</span>
+            </h1>
+
+            <p>
+                Enter your health measurements to receive a machine-learning
+                based diabetes risk screening estimate.
+            </p>
+
+            <div class="hero-features">
+                <div>
+                    <span>✓</span>
+                    Quick assessment
+                </div>
+
+                <div>
+                    <span>✓</span>
+                    No account required
+                </div>
+
+                <div>
+                    <span>✓</span>
+                    Screening support
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-card">
+            <div class="hero-card-icon">AI</div>
+
+            <h3>Machine Learning</h3>
+
+            <p>
+                Your information is analyzed using a trained Random Forest
+                classification model.
+            </p>
+
+            <div class="model-line">
+                <span>Model</span>
+                <strong>Random Forest</strong>
+            </div>
+
+            <div class="model-line">
+                <span>Assessment</span>
+                <strong>Binary Risk</strong>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<section class="assessment-section">
+<div class="container">
+
+<form action="/predict" method="POST" id="riskForm">
+
+
+<!-- PERSONAL INFORMATION -->
+
+<div class="form-card">
+
+    <div class="card-header">
+        <div class="step-number">01</div>
+
+        <div>
+            <h2>Personal information</h2>
+            <p>Provide some basic information about yourself.</p>
+        </div>
+    </div>
+
+    <div class="form-grid">
+
+        <div class="field">
+            <label for="age_num">Age <span>*</span></label>
+            <small>Age in years</small>
+
+            <input
+                type="number"
+                id="age_num"
+                name="age"
+                min="1"
+                max="120"
+                value="{{ saved.get('age', 30) }}"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="pregnancies">Pregnancies <span>*</span></label>
+            <small>Enter 0 if not applicable</small>
+
+            <input
+                type="number"
+                id="pregnancies"
+                name="pregnancies"
+                min="0"
+                max="20"
+                value="{{ saved.get('pregnancies', 0) }}"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="current_pregnancy">
+                Current pregnancy
+            </label>
+
+            <small>Contextual information</small>
+
+            <select id="current_pregnancy" name="current_pregnancy">
+                <option value="no"
+                    {{ 'selected' if saved.get('current_pregnancy', 'no') != 'yes' else '' }}>
+                    No / Not applicable
+                </option>
+
+                <option value="yes"
+                    {{ 'selected' if saved.get('current_pregnancy') == 'yes' else '' }}>
+                    Yes, currently pregnant
+                </option>
+            </select>
+        </div>
+
+
+        <div class="field">
+            <label for="height_cm_num">Height <span>*</span></label>
+            <small>Centimeters</small>
+
+            <input
+                type="number"
+                id="height_cm_num"
+                name="height_cm"
+                min="100"
+                max="230"
+                value="{{ saved.get('height_cm', 170) }}"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="weight_kg_num">Weight <span>*</span></label>
+            <small>Kilograms</small>
+
+            <input
+                type="number"
+                id="weight_kg_num"
+                name="weight_kg"
+                min="20"
+                max="250"
+                step="0.1"
+                value="{{ saved.get('weight_kg', 70) }}"
+                required
+            >
+        </div>
+
+    </div>
+
+
+    <div class="bmi-card">
+
+        <div class="bmi-symbol">BMI</div>
+
+        <div>
+            <span class="bmi-label">CALCULATED BMI</span>
+
+            <div class="bmi-value-row">
+                <strong id="bmiPreview">--</strong>
+                <span id="bmiPreviewCat">Enter height and weight</span>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- HEALTH MEASUREMENTS -->
+
+<div class="form-card">
+
+    <div class="card-header">
+        <div class="step-number">02</div>
+
+        <div>
+            <h2>Health measurements</h2>
+            <p>Enter your available clinical measurements.</p>
+        </div>
+    </div>
+
+
+    <div class="form-grid">
+
+        <div class="field field-wide">
+            <label for="glucose_num">
+                2-hour blood glucose <span>*</span>
+            </label>
+
+            <small>
+                Measured in mg/dL after a glucose drink
+            </small>
+
+            <input
+                type="number"
+                id="glucose_num"
+                name="glucose"
+                min="0"
+                max="500"
+                value="{{ saved.get('glucose', 110) }}"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="blood_pressure_num">
+                Diastolic blood pressure <span>*</span>
+            </label>
+
+            <small>
+                Lower number of a blood pressure reading
+            </small>
+
+            <input
+                type="number"
+                id="blood_pressure_num"
+                name="blood_pressure"
+                min="0"
+                max="200"
+                value="{{ saved.get('blood_pressure', 70) }}"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="family_history">
+                Family history <span>*</span>
+            </label>
+
+            <small>
+                Diabetes among parents or siblings
+            </small>
+
+            <select
+                id="family_history"
+                name="family_history"
+                required
+            >
+                <option value="none"
+                    {{ 'selected' if saved.get('family_history') == 'none' else '' }}>
+                    No known family history
+                </option>
+
+                <option value="one"
+                    {{ 'selected' if saved.get('family_history') == 'one' else '' }}>
+                    One relative
+                </option>
+
+                <option value="two_or_more"
+                    {{ 'selected' if saved.get('family_history') == 'two_or_more' else '' }}>
+                    Two or more relatives
+                </option>
+            </select>
+        </div>
+
+    </div>
+
+
+    <div class="info-box">
+        <div class="info-icon">i</div>
+
+        <div>
+            <strong>About this assessment</strong>
+
+            <p>
+                The machine-learning model provides a diabetes-risk screening
+                estimate. It does not determine a specific diabetes type or
+                replace professional medical assessment.
+            </p>
+        </div>
+    </div>
+
+</div>
+
+
+
+<!-- OPTIONAL LABS -->
+
+<div class="form-card optional-card">
+
+    <div class="card-header">
+
+        <div class="step-number optional-number">03</div>
+
+        <div>
+            <div class="optional-label">OPTIONAL</div>
+            <h2>Additional laboratory results</h2>
+
+            <p>
+                Enter these values only if you have recent laboratory results.
+            </p>
+        </div>
+
+    </div>
+
+
+    <div class="form-grid">
+
+        <div class="field">
+
+            <label for="insulin">
+                Serum insulin
+            </label>
+
+            <small>
+                2-hour serum insulin (mu U/ml)
+            </small>
+
+            <input
+                type="number"
+                id="insulin"
+                name="insulin"
+                min="0"
+                max="900"
+                step="1"
+                placeholder="Leave blank if unknown"
+                value="{{ saved.get('insulin', '') }}"
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="skin_thickness">
+                Skin fold thickness
+            </label>
+
+            <small>
+                Triceps skin fold thickness (mm)
+            </small>
+
+            <input
+                type="number"
+                id="skin_thickness"
+                name="skin_thickness"
+                min="0"
+                max="100"
+                step="1"
+                placeholder="Leave blank if unknown"
+                value="{{ saved.get('skin_thickness', '') }}"
+            >
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- SUBMIT -->
+
+<div class="submit-card">
+
+    <div class="submit-message">
+
+        <div class="secure-icon">✓</div>
+
+        <div>
+            <strong>Ready for assessment?</strong>
+
+            <span>
+                Your inputs will be analyzed by the prediction model.
+            </span>
+        </div>
+
+    </div>
+
+
+    <button type="submit" class="predict-button">
+        Calculate risk
+        <span>→</span>
+    </button>
+
+</div>
+
+
+</form>
+
+
+<div class="disclaimer">
+    <strong>Important:</strong>
+    This application is an AI/ML screening project and is not a medical
+    diagnosis. Results should be discussed with a qualified healthcare
+    professional.
+</div>
+
+
+</div>
+</section>
+
+</main>
+
+
+<footer>
+    <div class="container footer-inner">
+        <span>DiaPredict · AI/ML Capstone Project</span>
+        <span>Diabetes Risk Screening</span>
+    </div>
+</footer>
+
+
+<script>
+
+function updateBMI() {
+
+    const height =
+        parseFloat(document.getElementById("height_cm_num").value);
+
+    const weight =
+        parseFloat(document.getElementById("weight_kg_num").value);
+
+    const bmiValue =
+        document.getElementById("bmiPreview");
+
+    const bmiCategory =
+        document.getElementById("bmiPreviewCat");
+
+
+    if (!height || !weight || height <= 0) {
+
+        bmiValue.textContent = "--";
+        bmiCategory.textContent = "Enter height and weight";
+
+        return;
+    }
+
+
+    const bmi =
+        weight / Math.pow(height / 100, 2);
+
+
+    bmiValue.textContent = bmi.toFixed(1);
+
+
+    if (bmi < 18.5) {
+        bmiCategory.textContent = "Underweight";
+    }
+    else if (bmi < 25) {
+        bmiCategory.textContent = "Normal";
+    }
+    else if (bmi < 30) {
+        bmiCategory.textContent = "Overweight";
+    }
+    else {
+        bmiCategory.textContent = "Obese";
+    }
+}
+
+
+document
+    .getElementById("height_cm_num")
+    .addEventListener("input", updateBMI);
+
+document
+    .getElementById("weight_kg_num")
+    .addEventListener("input", updateBMI);
+
+updateBMI();
+
+</script>
+
+</body>
+</html>
